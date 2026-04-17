@@ -29,18 +29,13 @@ library(ggplot2)
 library(glmnet)
 ```
 
-## Material
+## Materials
 
-| 
-| 
-| 
+https://github.com/solonkarapa/Feature-Selection/
 
-link to github {.center}
 
-| 
-| 
-| 
-| 
+![](slides_files/images/github_qr.png){width="100%"}
+
 
 > Copyright © 2026 Solon Karapanagiotis -- This presentation and its contents may not be shared, copied, or redistributed without permission.
 

@@ -1,4 +1,4 @@
-## MPhil in Population Health Sciences - Feature Selection
+## Applied Machine Learning in Bioinformatics - Feature Selection
 
 MRC Biostatistics Unit  
 University of Cambridge  
@@ -16,7 +16,7 @@ Datasets
 
 ---
 ## 📂 Repository Structure
-.
+. 
 ├── data/          # datasets used in practicals  
 ├── practicals/    # practical lab sessions (RMarkdown)   
 ├── slides/        # lecture slides (HTML/qmd)  
@@ -44,12 +44,16 @@ install.packages(c(
   "ggplot2"
 ))
 ```
-
+### Working with Paths (Important!)
 This course uses the `here` package so file paths work on all computers.
 
 Always load files like this:
 
+```r
 library(here)
 read.csv(here("data", "dataset.csv"))
+```
+⚠️ License / Usage
 
-
+Course materials are provided for educational use only.
+Please do not redistribute without permission.
