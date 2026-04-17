@@ -1,0 +1,329 @@
+---
+title: "Feature Selection: Practical 3"
+subtitle: "Overfitting to Features"
+author: "Solon Karapanagiotis, MRC Biostatistics Unit, University of Cambridge"
+date: "21-04-2026"
+output:
+    html_document:
+        theme: cosmo
+        highlight: tango
+        toc: true
+        toc_float: true
+        number_sections: true
+        df_print: paged
+---
+
+# Introduction
+explore the impact of overfitting to feature selection
+
+# Dataset
+The dataset contains:
+
+- 500 observations,
+- 100 features (X1–X100), and 
+- a binary outcome $y \in \{0,1\}$.
+
+```{r}
+path_to_data <- "/Users/solon/Cloud-Drive/Teaching/MPhil_Data_Science/Applied_ML/code/demos/out/"
+
+load(paste0(path_to_data, "data_practical2.Rdata"))
+```
+
+```{r}
+str(data)
+```
+
+
+
+```{r, message=F, warning=F}
+library(randomForest)
+library(pROC)
+
+set.seed(42)
+
+# ============================================================
+# PARAMETERS
+# ============================================================
+subset_sizes <- 100:1 # feature subset sizes defined here
+
+# ============================================================
+# 1. Split data into training (analysis) and test set
+# ============================================================
+n <- nrow(data)
+train_idx <- sample(1:n, size = 0.7 * n)
+
+train_data <- data[train_idx, ]
+test_data  <- data[-train_idx, ]
+```
+
+# Approach 1 
+
+1.  Rank predictors using the training set.
+2.  For feature subset sizes from **5 down to 1**:
+    1.  For each resample:
+        -   Fit the model using the feature subset on the **analysis set**.
+        -   Predict the **assessment set**.
+    2.  End resampling loop.
+3. Determine the best feature subset using resampled performance.
+4. Fit the best feature subset using the **entire training set**.
+
+```{r}
+# ============================================================
+# 2. Rank predictors on full training set
+# ============================================================
+x_train_all <- train_data[, setdiff(names(train_data), "y")]
+y_train_all <- train_data$y
+
+rf_rank <- randomForest(
+  x = x_train_all,
+  y = as.factor(y_train_all),
+  importance = TRUE
+)
+
+imp <- importance(rf_rank, type = 2)[, 1]
+ranked_features <- names(sort(imp, decreasing = TRUE))
+
+# keep max needed features only
+max_k <- max(subset_sizes)
+top_features <- ranked_features[1:max_k]
+
+# ============================================================
+# 3. CV setup
+# ============================================================
+K <- 5
+fold_id <- sample(rep(1:K, length.out = nrow(train_data)))
+
+get_auc <- function(obs, prob) {
+  as.numeric(roc(obs, prob, quiet = TRUE)$auc)
+}
+
+# store results dynamically
+results <- setNames(rep(NA, length(subset_sizes)), subset_sizes)
+
+# ============================================================
+# 4. Loop over subset sizes (PARAMETERIZED)
+# ============================================================
+for (k in subset_sizes) {
+
+  fold_auc <- c()
+
+  # ----------------------------------------------------------
+  # 5. Cross-validation loop
+  # ----------------------------------------------------------
+  for (f in 1:K) {
+
+    analysis_set   <- train_data[fold_id != f, ]
+    assessment_set <- train_data[fold_id == f, ]
+
+    x_a <- analysis_set[, setdiff(names(train_data), "y"), drop = FALSE]
+    y_a <- analysis_set$y
+
+    x_b <- assessment_set[, setdiff(names(train_data), "y"), drop = FALSE]
+    y_b <- assessment_set$y
+
+    # ensure valid subset
+    features_k <- top_features[1:min(k, length(top_features))]
+
+    if (length(features_k) < k) next
+
+    # ------------------------------------------------------
+    # 6. Fit model
+    # ------------------------------------------------------
+    model <- randomForest(
+      x = x_a[, features_k, drop = FALSE],
+      y = as.factor(y_a),
+      ntree = 500
+    )
+
+    # ------------------------------------------------------
+    # 7. Predict
+    # ------------------------------------------------------
+    prob <- predict(
+      model,
+      x_b[, features_k, drop = FALSE],
+      type = "prob"
+    )[, 2]
+
+    fold_auc <- c(fold_auc, get_auc(y_b, prob))
+  }
+
+  # ----------------------------------------------------------
+  # 8. Store mean performance
+  # ----------------------------------------------------------
+  results[as.character(k)] <- mean(fold_auc, na.rm = TRUE)
+}
+
+# ============================================================
+# 9. Select best subset size
+# ============================================================
+best_k <- as.numeric(names(which.max(results)))
+best_features <- top_features[1:best_k]
+
+cat("Best subset size:", best_k, "\n")
+
+# ============================================================
+# 10. Fit final model on full training set
+# ============================================================
+final_model <- randomForest(
+  x = x_train_all[, best_features, drop = FALSE],
+  y = as.factor(y_train_all),
+  ntree = 500
+)
+
+# ============================================================
+# 11. Evaluate on test set
+# ============================================================
+test_prob <- predict(
+  final_model,
+  test_data[, best_features, drop = FALSE],
+  type = "prob"
+)[, 2]
+
+final_auc <- get_auc(test_data$y, test_prob)
+
+cat("Final test AUC:", final_auc, "\n")
+```
+
+## Approach 2
+
+1.  Split data into **analysis** and **assessment** sets.
+2.  For each resample:
+    1.  Rank predictors using the **analysis set**.
+    2.  For feature subset sizes from **5 down to 1**:
+        -   Fit the model using the feature subset on the **analysis set**.
+        -   Predict the **assessment set**.
+    3.  End feature subset loop.
+3.  Average the resampled performance for each model and feature subset size.
+4.  Fit the best feature subset using the **entire training set**.
+5.  Choose the model and feature subset with the best performance.
+6.  Fit the final model using the best feature subset on the **entire training set**.
+
+```{r}
+# ============================================================
+# Helper function
+# ============================================================
+get_auc <- function(obs, prob) {
+  as.numeric(roc(obs, prob, quiet = TRUE)$auc)
+}
+
+# ============================================================
+# 2. Create resampling folds (analysis / assessment)
+# ============================================================
+K <- 5
+fold_id <- sample(rep(1:K, length.out = nrow(train_data)))
+
+# ============================================================
+# 3. Storage for results
+# ============================================================
+results <- numeric(length(subset_sizes))
+names(results) <- as.character(subset_sizes)
+
+# ============================================================
+# 4. Loop over feature subset sizes
+# ============================================================
+for (k in subset_sizes) {
+
+  fold_auc <- c()
+
+  # ==========================================================
+  # For each resample (CV loop)
+  # ==========================================================
+  for (f in 1:K) {
+
+    # --------------------------------------------------------
+    # Split into analysis / assessment
+    # --------------------------------------------------------
+    analysis_set   <- train_data[fold_id != f, ]
+    assessment_set <- train_data[fold_id == f, ]
+
+    x_a <- analysis_set[, setdiff(names(train_data), "y"), drop = FALSE]
+    y_a <- analysis_set$y
+
+    x_b <- assessment_set[, setdiff(names(train_data), "y"), drop = FALSE]
+    y_b <- assessment_set$y
+
+    # --------------------------------------------------------
+    # Rank predictors using ANALYSIS set only
+    # --------------------------------------------------------
+    rf_rank <- randomForest(
+      x = x_a,
+      y = as.factor(y_a),
+      importance = TRUE
+    )
+
+    imp <- importance(rf_rank, type = 2)[, 1]
+    ranked <- names(sort(imp, decreasing = TRUE))
+
+    features_k <- ranked[1:min(k, length(ranked))]
+
+    # --------------------------------------------------------
+    # Fit model on analysis set
+    # --------------------------------------------------------
+    model <- randomForest(
+      x = x_a[, features_k, drop = FALSE],
+      y = as.factor(y_a),
+      ntree = 500
+    )
+
+    # --------------------------------------------------------
+    # Predict assessment set
+    # --------------------------------------------------------
+    prob <- predict(
+      model,
+      x_b[, features_k, drop = FALSE],
+      type = "prob"
+    )[, 2]
+
+    fold_auc <- c(fold_auc, get_auc(y_b, prob))
+  }
+
+  # ----------------------------------------------------------
+  # Average performance for subset size k
+  # ----------------------------------------------------------
+  results[as.character(k)] <- mean(fold_auc)
+}
+
+# ============================================================
+# 5. Select best subset size
+# ============================================================
+best_k <- as.numeric(names(which.max(results)))
+cat("Best subset size:", best_k, "\n")
+
+# ============================================================
+# 6. Final ranking on full training set
+# ============================================================
+rf_final_rank <- randomForest(
+  x = train_data[, setdiff(names(train_data), "y")],
+  y = as.factor(train_data$y),
+  importance = TRUE
+)
+
+imp_final <- importance(rf_final_rank, type = 2)[, 1]
+ranked_final <- names(sort(imp_final, decreasing = TRUE))
+
+best_features <- ranked_final[1:best_k]
+
+# ============================================================
+# 7. Fit final model on full training set
+# ============================================================
+final_model <- randomForest(
+  x = train_data[, best_features, drop = FALSE],
+  y = as.factor(train_data$y),
+  ntree = 500
+)
+
+# ============================================================
+# 8. Evaluate on test set
+# ============================================================
+test_prob <- predict(
+  final_model,
+  test_data[, best_features, drop = FALSE],
+  type = "prob"
+)[, 2]
+
+final_auc <- get_auc(test_data$y, test_prob)
+
+cat("Final test AUC:", final_auc, "\n")
+```
+
+

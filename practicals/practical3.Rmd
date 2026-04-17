@@ -1,0 +1,85 @@
+---
+title: "Feature Selection: Practical 3"
+subtitle: "Overfitting to Features"
+author:
+ - name: Solon Karapanagiotis
+   affiliations: MRC Biostatistics Unit, University of Cambridge
+date: "21-04-2026"
+output:
+    html_document:
+        theme: cosmo
+        highlight: tango
+        toc: true
+        toc_float: true
+        number_sections: true
+        df_print: paged
+---
+
+# Introduction
+Explore the impact of overfitting to feature selection. 
+
+# Dataset
+The same as in Practical 2. It contains:
+
+- 500 observations,
+- 100 features (X1–X100), and 
+- a binary outcome $y \in \{0,1\}$.
+
+```{r}
+path_to_data <- "/Users/solon/Cloud-Drive/Teaching/MPhil_Data_Science/Applied_ML/feature_selection/data/"
+
+load(paste0(path_to_data, "data_practical2.Rdata"))
+```
+
+```{r}
+str(data)
+```
+
+
+
+```{r, message=F, warning=F}
+library(randomForest)
+library(pROC)
+
+set.seed(42)
+
+# ============================================================
+# PARAMETERS
+# ============================================================
+subset_sizes <- 100:1 # feature subset sizes defined here
+
+# ============================================================
+# 1. Split data into training (analysis) and test set
+# ============================================================
+n <- nrow(data)
+train_idx <- sample(1:n, size = 0.7 * n)
+
+train_data <- data[train_idx, ]
+test_data  <- data[-train_idx, ]
+```
+
+# Approach 1 
+
+1.  Rank predictors using the training set.
+2.  For feature subset sizes from **100 down to 1**:
+    1.  For each resample:
+        -   Fit the model using the feature subset on the **analysis set**.
+        -   Predict the **assessment set**.
+    2.  End resampling loop.
+3. Determine the best feature subset using resampled performance.
+4. Fit the best feature subset using the **entire training set**.
+
+# Approach 2
+
+1.  Split data into **analysis** and **assessment** sets.
+2.  For each resample:
+    1.  Rank predictors using the **analysis set**.
+    2.  For feature subset sizes from **100 down to 1**:
+        -   Fit the model using the feature subset on the **analysis set**.
+        -   Predict the **assessment set**.
+    3.  End feature subset loop.
+3.  Average the resampled performance for each model and feature subset size.
+4.  Fit the best feature subset using the **entire training set**.
+5.  Choose the model and feature subset with the best performance.
+6.  Fit the final model using the best feature subset on the **entire training set**.
+

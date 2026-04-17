@@ -1,0 +1,96 @@
+---
+title: "Feature Selection: Practical 2"
+subtitle: "Comparing Feature Selection Methods"
+author:
+ - name: Solon Karapanagiotis
+   affiliations: MRC Biostatistics Unit, University of Cambridge
+date: "21-04-2026"
+output:
+    html_document:
+        theme: cosmo
+        highlight: tango
+        toc: true
+        toc_float: true
+        number_sections: true
+        df_print: paged
+---
+
+© `r format(Sys.Date(), "%Y")` Solon Karapanagiotis. All rights reserved.
+
+High-dimensional binary classification problem to test different feature selection methods.
+
+# Setup
+
+```{r, warning=F, message=F}
+library(caret)
+library(pROC)
+```
+
+# Dataset
+The dataset contains:
+
+- 500 observations,
+- 100 features (X1–X100), and 
+- a binary outcome $y \in \{0,1\}$.
+
+```{r}
+path_to_data <- "/Users/solon/Cloud-Drive/Teaching/MPhil_Data_Science/Applied_ML/feature_selection/data/"
+
+load(paste0(path_to_data, "data_practical2.Rdata"))
+```
+
+```{r}
+str(data)
+```
+
+This code splits the dataset into training and test sets using a stratified sampling approach.
+
+First, `set.seed(1)` ensures the split is reproducible. The function `createDataPartition()` from the caret package creates a partition of the outcome variable $y$, selecting 70% of the observations for training while preserving the original class distribution. This is important in binary classification to avoid imbalance between classes in the split.
+
+```{r}
+set.seed(1)
+trainIndex <- caret::createDataPartition(data$y, p = .7, list = FALSE)
+train <- data[trainIndex, ]
+test  <- data[-trainIndex, ]
+```
+
+# Feature Selection
+
+The `glm()` fits a logistic regression using all predictors in the training set to predict $y$. 
+
+- `glm(...)` stands for Generalized Linear Model in R.
+- `y ~ .` means the model predicts the outcome variable $y$ using all other variables in the dataset as features.
+- `data = train` specifies that the model is trained on the training set.
+- `family = "binomial"` indicates that this is a logistic regression, appropriate for a binary outcome (0/1).
+
+This serves as a simple benchmark model with no feature selection.
+
+```{r}
+baseline_model <- glm(y ~ ., data = train, family = "binomial")
+
+# generate predicted probabilities for the test set
+pred <- predict(baseline_model, test, type = "response")
+
+# model performance is evaluated using the Area Under the ROC Curve (AUC)
+baseline_auc <- pROC::roc(test$y, pred, direction = "<")$auc
+baseline_auc
+```
+## Filter Methods 
+
+- Implement two filter methods and compare their results.
+
+## Wrapper methods
+
+- Implement two wrapper methods and compare their results.
+
+## Embedded methods
+
+- Implement two embedded methods and compare their results.
+
+# Discussion
+
+- Which method achieved best predictive performance?
+
+- Which features appear in every method?
+
+

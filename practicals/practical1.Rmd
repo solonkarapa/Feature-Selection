@@ -1,0 +1,378 @@
+---
+title: "Feature Selection: Practical 1"
+subtitle: "Effect of Irrelevant Features on Model Performance"
+author:
+ - name: Solon Karapanagiotis
+   affiliations: MRC Biostatistics Unit, University of Cambridge
+date: "21-04-2026"
+output:
+    html_document:
+        theme: cosmo
+        highlight: tango
+        toc: true
+        toc_float: true
+        number_sections: true
+        df_print: paged
+---
+
+© `r format(Sys.Date(), "%Y")` Solon Karapanagiotis. All rights reserved.
+
+# Overview
+
+This document runs a simulation study comparing several machine learning models when the dataset contains an increasing number of (irrelevant) features.
+
+The file generates synthetic data where:
+
+- Only 20 features truly affect the outcome.
+- Up to 100 irrelevant features are added.
+- Several machine learning models are compared using root mean squared error (RMSE) on a test set. 
+
+We vary:
+
+- Training sample size . 
+- Number of irrelevant features.  
+- Model type.  
+
+Models compared:
+
+- Linear Regression  
+- LASSO  
+- Random Forest  
+
+Your goal is to:
+
+1. Understand the simulation
+2. Analyse the results
+3. Extend the experiment
+4. Interpret the findings
+
+---
+
+# Load Libraries and Set Seed
+
+```{r setup, message=FALSE, warning=FALSE}
+library(glmnet)        # LASSO regression
+library(caret)         # modelling framework
+library(randomForest)  # Random Forest
+library(e1071)         # SVM
+library(dplyr)
+library(ggplot2)
+
+set.seed(123)  # reproducibility
+```
+
+# Simulation Design
+
+We create a controlled experiment:
+
+- Only 20 features truly matter.
+- Up to 100 irrelevant predictors are added. 
+
+We repeat experiments 10 times for stability. 
+
+```{r}
+n_train_sizes <- c(500, 1000)
+num_relevant <- 20
+num_irrelevant <- seq(from = 0, to = 100, by = 20)
+sigma_error <- 3
+n_test <- 10000
+num_sim <- 10
+```
+
+# True Data Generating Function
+
+\begin{align}
+f(X) = {} & X_1 + \sin(X_2) + \log\left(|X_3| + 10^{-8}\right) + X_4^2 + X_5 X_6 \nonumber \\
+& + \mathbb{1}(X_7 X_8 X_9 < 0) + \mathbb{1}(X_{10} > 0) + X_{11}\,\mathbb{1}(X_{11} > 0) \nonumber \\
+& + \sqrt{|X_{12}|} + \cos(X_{13}) + 2X_{14} + |X_{15}| \nonumber \\
+& + \mathbb{1}(X_{16} < -1) + X_{17}\,\mathbb{1}(X_{17} < -1) - 2X_{18} - X_{19}X_{20}.
+\end{align}
+
+$$y = f(X) + \epsilon$$
+
+where $\epsilon \sim N(0, 3)$.
+
+```{r}
+f_relevant <- function(X) {
+    X <- as.data.frame(X)
+    X1 <- X[,1]; X2 <- X[,2]; X3 <- X[,3]; X4 <- X[,4]; X5 <- X[,5]
+    X6 <- X[,6]; X7 <- X[,7]; X8 <- X[,8]; X9 <- X[,9]; X10 <- X[,10]
+    X11 <- X[,11]; X12 <- X[,12]; X13 <- X[,13]; X14 <- X[,14]; X15 <- X[,15]
+    X16 <- X[,16]; X17 <- X[,17]; X18 <- X[,18]; X19 <- X[,19]; X20 <- X[,20]
+    
+    X1 + sin(X2) + log(abs(X3) + 1e-8) + X4^2 + X5*X6 +
+        as.numeric(X7*X8*X9 < 0) + as.numeric(X10 > 0) +
+        X11 * as.numeric(X11 > 0) + sqrt(abs(X12)) + cos(X13) +
+        2*X14 + abs(X15) + as.numeric(X16 < -1) +
+        X17 * as.numeric(X17 < -1) - 2*X18 - X19*X20
+}
+```
+
+# Create Results Grid
+
+Each row represents one experiment configuration.
+
+```{r}
+results <- expand.grid(
+    n_train = n_train_sizes,
+    n_irrelevant = num_irrelevant,
+    model = c("Linear", "Lasso", "RF")
+) %>%
+    mutate(RMSE = NA)
+```
+
+# Main Simulation Loop
+
+For each configuration we:
+
+1. Generate training data
+2. Generate test data
+3. Fit model
+4. Compute RMSE
+5. Repeat and average 
+
+**DO NOT RUN**
+
+```{r, eval=F}
+for(i in 1:nrow(results)) {
+    
+    n_train <- results$n_train[i]
+    p_irrelevant <- results$n_irrelevant[i]
+    model_type <- results$model[i]
+    
+    rmse_sim <- numeric(num_sim)
+    
+    for(sim in 1:num_sim) {
+
+        # Generate training data
+        X_relevant <- matrix(rnorm(n_train * num_relevant), n_train, num_relevant)
+        colnames(X_relevant) <- paste0("X", 1:num_relevant)
+        
+        if(p_irrelevant > 0) {
+            X_irrelevant <- matrix(rnorm(n_train * p_irrelevant), n_train, p_irrelevant)
+            colnames(X_irrelevant) <- paste0("Z", 1:p_irrelevant)
+        } else {
+            X_irrelevant <- matrix(nrow = n_train, ncol = 0)
+        }
+        
+        X_train <- cbind(X_relevant, X_irrelevant)
+        y_train <- f_relevant(X_relevant) + rnorm(n_train, 0, sigma_error)
+        
+        df_train <- as.data.frame(X_train)
+        df_train$y <- y_train
+        
+        # Generate test data
+        X_relevant_test <- matrix(rnorm(n_test * num_relevant), n_test, num_relevant)
+        colnames(X_relevant_test) <- paste0("X", 1:num_relevant)
+        
+        if(p_irrelevant > 0) {
+            X_irrelevant_test <- matrix(rnorm(n_test * p_irrelevant), n_test, p_irrelevant)
+            colnames(X_irrelevant_test) <- paste0("Z", 1:p_irrelevant)
+        } else {
+            X_irrelevant_test <- matrix(nrow = n_test, ncol = 0)
+        }
+        
+        X_test <- cbind(X_relevant_test, X_irrelevant_test)
+        y_test <- f_relevant(X_relevant_test) + rnorm(n_test, 0, sigma_error)
+        df_test <- as.data.frame(X_test)
+        
+        # Fit models
+        if(model_type == "Linear") {
+            fit <- lm(y ~ ., data = df_train)
+            y_pred <- predict(fit, newdata = df_test)
+            
+        } else if(model_type == "Lasso") {
+            fit <- cv.glmnet(as.matrix(df_train[,-ncol(df_train)]), df_train$y, alpha = 1)
+            y_pred <- predict(fit, s = "lambda.min", newx = as.matrix(df_test))
+            
+        } else if(model_type == "RF") {
+            fit <- randomForest(y ~ ., data = df_train, ntree = 200)
+            y_pred <- predict(fit, newdata = df_test)
+            
+        } else if(model_type == "SVM") {
+            fit <- svm(y ~ ., data = df_train, kernel = "radial")
+            y_pred <- predict(fit, newdata = df_test)
+        }
+        
+        rmse_sim[sim] <- sqrt(mean((y_test - y_pred)^2))
+    }
+    
+    results$RMSE[i] <- mean(rmse_sim)
+    cat("Done:", i, "/", nrow(results), "\n")
+}
+```
+
+Notes
+
+- Runtime ≈ 15 minutes depending on hardware.
+- Increase num_sim for more accurate estimates.
+
+## Parallel Simulation
+
+```{r, message=F}
+library(doParallel)
+library(foreach)
+
+# Detect cores and create cluster
+if (interactive()) {
+  n_cores <- parallel::detectCores() - 1
+} else {
+  n_cores <- 2
+}
+
+cl <- parallel::makeCluster(n_cores)
+doParallel::registerDoParallel(cl)
+
+cat("Using", n_cores, "cores\n")
+```
+
+```{r}
+# ------------------------------
+# Experiment grid
+# ------------------------------
+grid <- expand.grid(
+    n_train = n_train_sizes,
+    n_irrelevant = num_irrelevant,
+    model = c("Linear", "Lasso", "RF", "SVM")
+)
+```
+
+```{r, eval=F}
+results <- foreach(i = 1:nrow(grid),
+                   .combine = rbind,
+                   .packages = c("glmnet","randomForest","e1071","caret","dplyr")) %dopar% {
+
+    n_train <- grid$n_train[i]
+    p_irrelevant <- grid$n_irrelevant[i]
+    model_type <- grid$model[i]
+    
+    rmse_sim <- numeric(num_sim)
+
+    for(sim in 1:num_sim) {
+
+        # ---- Training data ----
+        X_relevant <- matrix(rnorm(n_train * num_relevant), n_train, num_relevant)
+        colnames(X_relevant) <- paste0("X", 1:num_relevant)
+
+        if(p_irrelevant > 0){
+            X_irrelevant <- matrix(rnorm(n_train * p_irrelevant), n_train, p_irrelevant)
+            colnames(X_irrelevant) <- paste0("Z", 1:p_irrelevant)
+        } else {
+            X_irrelevant <- matrix(nrow=n_train,ncol = 0)
+        }
+
+        X_train <- cbind(X_relevant, X_irrelevant)
+        y_train <- f_relevant(X_relevant) + rnorm(n_train, 0, sigma_error)
+
+        df_train <- as.data.frame(X_train)
+        df_train$y <- y_train
+
+        # ---- Test data ----
+        X_relevant_test <- matrix(rnorm(n_test * num_relevant), n_test, num_relevant)
+        colnames(X_relevant_test) <- paste0("X", 1:num_relevant)
+
+        if(p_irrelevant > 0){
+            X_irrelevant_test <- matrix(rnorm(n_test * p_irrelevant), n_test, p_irrelevant)
+            colnames(X_irrelevant_test) <- paste0("Z", 1:p_irrelevant)
+        } else {
+            X_irrelevant_test <- matrix(nrow=n_test,ncol = 0)
+        }
+
+        X_test <- cbind(X_relevant_test, X_irrelevant_test)
+        y_test <- f_relevant(X_relevant_test) + rnorm(n_test, 0, sigma_error)
+        df_test <- as.data.frame(X_test)
+
+        # ---- Fit model ----
+        if(model_type == "Linear"){
+            fit <- lm(y~., data=df_train)
+            y_pred <- predict(fit, df_test)
+
+        } else if(model_type == "Lasso"){
+            fit <- cv.glmnet(as.matrix(df_train[,-ncol(df_train)]), df_train$y, alpha=1)
+            y_pred <- predict(fit, s = "lambda.min", newx=as.matrix(df_test))
+
+        } else if(model_type == "RF"){
+            fit <- randomForest(y~., data=df_train, ntree = 200)
+            y_pred <- predict(fit, df_test)
+
+        } else if(model_type == "SVM"){
+            fit <- svm(y~., data = df_train, kernel = "radial")
+            y_pred <- predict(fit, df_test)
+        }
+
+        rmse_sim[sim] <- sqrt(mean((y_test - y_pred)^2))
+    }
+
+    data.frame(
+        n_train = n_train,
+        n_irrelevant = p_irrelevant,
+        model = model_type,
+        RMSE = mean(rmse_sim)
+    )
+}
+
+# ------------------------------
+# Stop cluster
+# ------------------------------
+stopCluster(cl)
+
+cat("Simulation complete!\n")
+```
+
+```{r, echo=F}
+#save(results, file = "results_practical1.Rdata")
+load("/Users/solon/Cloud-Drive/Teaching/MPhil_Data_Science/Applied_ML/feature_selection/data/results_practical1.Rdata")
+```
+
+```{r}
+head(results)
+```
+
+```{r}
+ggplot(results, aes(x = n_irrelevant, y = RMSE, color = model)) +
+    geom_line(linewidth = 1) +
+    geom_point() +
+    facet_wrap(~ n_train) +
+    labs(
+        x = "Number of Irrelevant Features",
+        y = "Test RMSE",
+        color = "Model",
+        title = "Effect of Irrelevant Features on Different Models"
+    ) +
+    theme_minimal()
+```
+
+# Practical 
+
+## Part 1 - Understanding the Simulation
+
+1. Why might Linear Regression perform poorly in this simulation even when the number of irrelevant predictors is small?
+
+2. Which model in the study makes the strongest assumptions about the functional form of the data?
+
+3. Which model is most flexible? What are the risks of that flexibility?
+
+## Part 2 - Coding Extensions 
+
+4. Add K-Nearest Neighbours (KNN) to the simulation and compare with other models.
+
+    You need to:
+
+    - Add "KNN" to the results grid
+    - Add a KNN training block inside the loop
+    - Re-run the simulation
+
+5. Add one new model of your choice. 
+
+    Explain:
+
+    - Why you chose this model 
+    - How it compares with the existing ones
+
+## Part 3 - Methodological Extensions
+
+6. Change noise level. Repeat the experiment with $\sigma = 1$ and $\sigma = 6$. How does noise affect model ranking?
+
+7. Modify the data-generating function so that it favours linear models. 
+
+
