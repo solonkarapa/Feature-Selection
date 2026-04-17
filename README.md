@@ -45,3 +45,11 @@ install.packages(c(
 ))
 ```
 
+This course uses the `here` package so file paths work on all computers.
+
+Always load files like this:
+
+library(here)
+read.csv(here("data", "dataset.csv"))
+
+

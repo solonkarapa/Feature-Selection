@@ -320,8 +320,8 @@ cat("Simulation complete!\n")
 ```
 
 ```{r, echo=F}
-#save(results, file = "results_practical1.Rdata")
-load("/Users/solon/Cloud-Drive/Teaching/MPhil_Data_Science/Applied_ML/feature_selection/data/results_practical1.Rdata")
+library(here)
+load(here("results_practical1.Rdata"))
 ```
 
 ```{r}
