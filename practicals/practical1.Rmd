@@ -37,7 +37,8 @@ Models compared:
 
 - Linear Regression  
 - LASSO  
-- Random Forest  
+- Random Forest (RF)
+- Support Vector Machines (SVM)
 
 Your goal is to:
 
@@ -215,7 +216,7 @@ library(foreach)
 
 # Detect cores and create cluster
 if (interactive()) {
-  n_cores <- parallel::detectCores() - 1
+  n_cores <- parallel::detectCores() - 1 
 } else {
   n_cores <- 2
 }
@@ -320,8 +321,8 @@ cat("Simulation complete!\n")
 ```
 
 ```{r, echo=F}
-library(here)
-load(here("results_practical1.Rdata"))
+#library(here)
+#load(here("results_practical1.Rdata"))
 ```
 
 ```{r}

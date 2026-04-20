@@ -11,7 +11,7 @@
 
 
 
-<title>Feature Selection: Practical 2</title>
+<title>Feature Selection: Practical 3</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -2838,24 +2838,17 @@ border-radius: 0px;
 
 
 
-<h1 class="title toc-ignore">Feature Selection: Practical 2</h1>
-<h3 class="subtitle">Comparing Feature Selection Methods</h3>
+<h1 class="title toc-ignore">Feature Selection: Practical 3</h1>
+<h3 class="subtitle">Overfitting to Features</h3>
 <h4 class="author">Solon Karapanagiotis</h4>
 <h4 class="date">21-04-2026</h4>
 
 </div>
 
 
-<p>© 2026 Solon Karapanagiotis. All rights reserved.</p>
-<p>High-dimensional binary classification problem to test different
-feature selection methods.</p>
-<div id="setup" class="section level1" number="1">
-<h1><span class="header-section-number">1</span> Setup</h1>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(caret)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(pROC)</span></code></pre></div>
-</div>
-<div id="dataset" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> Dataset</h1>
+<p>Explore the impact of overfitting to feature selection.</p>
+<div id="dataset" class="section level1" number="1">
+<h1><span class="header-section-number">1</span> Dataset</h1>
 <p>The dataset contains:</p>
 <ul>
 <li>500 observations,</li>
@@ -2863,10 +2856,8 @@ feature selection methods.</p>
 <li>a binary outcome <span class="math inline">\(y \in
 \{0,1\}\)</span>.</li>
 </ul>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">load</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;data_practical2.Rdata&quot;</span>))</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#load(here::here(&quot;data_practical2.Rdata&quot;))</span></span></code></pre></div>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">str</span>(data)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">load</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">&quot;data&quot;</span>, <span class="st">&quot;data_practical2.Rdata&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">str</span>(data)</span></code></pre></div>
 <pre><code>## &#39;data.frame&#39;:    500 obs. of  101 variables:
 ##  $ y   : int  1 1 1 1 1 0 1 1 0 0 ...
 ##  $ X1  : num  0.175 -1.102 0.969 0.34 0.475 ...
@@ -2968,70 +2959,309 @@ feature selection methods.</p>
 ##  $ X97 : num  1.688491 -0.02114 -0.0205 -1.332804 -0.000505 ...
 ##  $ X98 : num  -1.352 0.663 0.586 1.602 -0.194 ...
 ##   [list output truncated]</code></pre>
-<p>This code splits the dataset into training and test sets using a
-stratified sampling approach.</p>
-<p>First, <code>set.seed(1)</code> ensures the split is reproducible.
-The function <code>createDataPartition()</code> from the caret package
-creates a partition of the outcome variable <span class="math inline">\(y\)</span>, selecting 70% of the observations for
-training while preserving the original class distribution. This is
-important in binary classification to avoid imbalance between classes in
-the split.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>trainIndex <span class="ot">&lt;-</span> caret<span class="sc">::</span><span class="fu">createDataPartition</span>(data<span class="sc">$</span>y, <span class="at">p =</span> .<span class="dv">7</span>, <span class="at">list =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>train <span class="ot">&lt;-</span> data[trainIndex, ]</span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>test  <span class="ot">&lt;-</span> data[<span class="sc">-</span>trainIndex, ]</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(randomForest)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">library</span>(pROC)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co"># PARAMETERS</span></span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>subset_sizes <span class="ot">&lt;-</span> <span class="dv">100</span><span class="sc">:</span><span class="dv">1</span> <span class="co"># feature subset sizes defined here</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co"># 1. Split data into training (analysis) and test set</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="fu">nrow</span>(data)</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>train_idx <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">1</span><span class="sc">:</span>n, <span class="at">size =</span> <span class="fl">0.7</span> <span class="sc">*</span> n)</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>train_data <span class="ot">&lt;-</span> data[train_idx, ]</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>test_data  <span class="ot">&lt;-</span> data[<span class="sc">-</span>train_idx, ]</span></code></pre></div>
 </div>
-<div id="feature-selection" class="section level1" number="3">
-<h1><span class="header-section-number">3</span> Feature Selection</h1>
-<p>The <code>glm()</code> fits a logistic regression using all
-predictors in the training set to predict <span class="math inline">\(y\)</span>.</p>
+<div id="approach-1" class="section level1" number="2">
+<h1><span class="header-section-number">2</span> Approach 1</h1>
+<ol style="list-style-type: decimal">
+<li>Rank predictors using the training set.</li>
+<li>For feature subset sizes from <strong>100 down to 1</strong>:
+<ol style="list-style-type: decimal">
+<li>For each resample:
 <ul>
-<li><code>glm(...)</code> stands for Generalized Linear Model in R.</li>
-<li><code>y ~ .</code> means the model predicts the outcome variable
-<span class="math inline">\(y\)</span> using all other variables in the
-dataset as features.</li>
-<li><code>data = train</code> specifies that the model is trained on the
-training set.</li>
-<li><code>family = &quot;binomial&quot;</code> indicates that this is a logistic
-regression, appropriate for a binary outcome (0/1).</li>
-</ul>
-<p>This serves as a simple benchmark model with no feature
-selection.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>baseline_model <span class="ot">&lt;-</span> <span class="fu">glm</span>(y <span class="sc">~</span> ., <span class="at">data =</span> train, <span class="at">family =</span> <span class="st">&quot;binomial&quot;</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co"># generate predicted probabilities for the test set</span></span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(baseline_model, test, <span class="at">type =</span> <span class="st">&quot;response&quot;</span>)</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co"># model performance is evaluated using the Area Under the ROC Curve (AUC)</span></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>baseline_auc <span class="ot">&lt;-</span> pROC<span class="sc">::</span><span class="fu">roc</span>(test<span class="sc">$</span>y, pred, <span class="at">direction =</span> <span class="st">&quot;&lt;&quot;</span>)<span class="sc">$</span>auc</span></code></pre></div>
-<pre><code>## Setting levels: control = 0, case = 1</code></pre>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>baseline_auc</span></code></pre></div>
-<pre><code>## Area under the curve: 0.7078</code></pre>
-<div id="filter-methods" class="section level2" number="3.1">
-<h2><span class="header-section-number">3.1</span> Filter Methods</h2>
+<li>Fit the model using the feature subset on the <strong>analysis
+set</strong>.</li>
+<li>Predict the <strong>assessment set</strong>.</li>
+</ul></li>
+<li>End resampling loop.</li>
+</ol></li>
+<li>Determine the best feature subset using resampled performance.</li>
+<li>Fit the best feature subset using the <strong>entire training
+set</strong>.</li>
+</ol>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co"># 2. Rank predictors on full training set</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>x_train_all <span class="ot">&lt;-</span> train_data[, <span class="fu">setdiff</span>(<span class="fu">names</span>(train_data), <span class="st">&quot;y&quot;</span>)]</span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>y_train_all <span class="ot">&lt;-</span> train_data<span class="sc">$</span>y</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>rf_rank <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="at">x =</span> x_train_all,</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="at">y =</span> <span class="fu">as.factor</span>(y_train_all),</span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>  <span class="at">importance =</span> <span class="cn">TRUE</span></span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a>)</span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>imp <span class="ot">&lt;-</span> <span class="fu">importance</span>(rf_rank, <span class="at">type =</span> <span class="dv">2</span>)[, <span class="dv">1</span>]</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>ranked_features <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">sort</span>(imp, <span class="at">decreasing =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co"># keep max needed features only</span></span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>max_k <span class="ot">&lt;-</span> <span class="fu">max</span>(subset_sizes)</span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>top_features <span class="ot">&lt;-</span> ranked_features[<span class="dv">1</span><span class="sc">:</span>max_k]</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co"># 3. CV setup</span></span>
+<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb5-24"><a href="#cb5-24" tabindex="-1"></a>fold_id <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>K, <span class="at">length.out =</span> <span class="fu">nrow</span>(train_data)))</span>
+<span id="cb5-25"><a href="#cb5-25" tabindex="-1"></a></span>
+<span id="cb5-26"><a href="#cb5-26" tabindex="-1"></a>get_auc <span class="ot">&lt;-</span> <span class="cf">function</span>(obs, prob) {</span>
+<span id="cb5-27"><a href="#cb5-27" tabindex="-1"></a>  <span class="fu">as.numeric</span>(<span class="fu">roc</span>(obs, prob, <span class="at">quiet =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>auc)</span>
+<span id="cb5-28"><a href="#cb5-28" tabindex="-1"></a>}</span>
+<span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co"># store results dynamically</span></span>
+<span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">rep</span>(<span class="cn">NA</span>, <span class="fu">length</span>(subset_sizes)), subset_sizes)</span>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co"># 4. Loop over subset sizes (PARAMETERIZED)</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb5-36"><a href="#cb5-36" tabindex="-1"></a><span class="cf">for</span> (k <span class="cf">in</span> subset_sizes) {</span>
+<span id="cb5-37"><a href="#cb5-37" tabindex="-1"></a></span>
+<span id="cb5-38"><a href="#cb5-38" tabindex="-1"></a>  fold_auc <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb5-39"><a href="#cb5-39" tabindex="-1"></a></span>
+<span id="cb5-40"><a href="#cb5-40" tabindex="-1"></a>  <span class="co"># ----------------------------------------------------------</span></span>
+<span id="cb5-41"><a href="#cb5-41" tabindex="-1"></a>  <span class="co"># 5. Cross-validation loop</span></span>
+<span id="cb5-42"><a href="#cb5-42" tabindex="-1"></a>  <span class="co"># ----------------------------------------------------------</span></span>
+<span id="cb5-43"><a href="#cb5-43" tabindex="-1"></a>  <span class="cf">for</span> (f <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>K) {</span>
+<span id="cb5-44"><a href="#cb5-44" tabindex="-1"></a></span>
+<span id="cb5-45"><a href="#cb5-45" tabindex="-1"></a>    analysis_set   <span class="ot">&lt;-</span> train_data[fold_id <span class="sc">!=</span> f, ]</span>
+<span id="cb5-46"><a href="#cb5-46" tabindex="-1"></a>    assessment_set <span class="ot">&lt;-</span> train_data[fold_id <span class="sc">==</span> f, ]</span>
+<span id="cb5-47"><a href="#cb5-47" tabindex="-1"></a></span>
+<span id="cb5-48"><a href="#cb5-48" tabindex="-1"></a>    x_a <span class="ot">&lt;-</span> analysis_set[, <span class="fu">setdiff</span>(<span class="fu">names</span>(train_data), <span class="st">&quot;y&quot;</span>), drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb5-49"><a href="#cb5-49" tabindex="-1"></a>    y_a <span class="ot">&lt;-</span> analysis_set<span class="sc">$</span>y</span>
+<span id="cb5-50"><a href="#cb5-50" tabindex="-1"></a></span>
+<span id="cb5-51"><a href="#cb5-51" tabindex="-1"></a>    x_b <span class="ot">&lt;-</span> assessment_set[, <span class="fu">setdiff</span>(<span class="fu">names</span>(train_data), <span class="st">&quot;y&quot;</span>), drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb5-52"><a href="#cb5-52" tabindex="-1"></a>    y_b <span class="ot">&lt;-</span> assessment_set<span class="sc">$</span>y</span>
+<span id="cb5-53"><a href="#cb5-53" tabindex="-1"></a></span>
+<span id="cb5-54"><a href="#cb5-54" tabindex="-1"></a>    <span class="co"># ensure valid subset</span></span>
+<span id="cb5-55"><a href="#cb5-55" tabindex="-1"></a>    features_k <span class="ot">&lt;-</span> top_features[<span class="dv">1</span><span class="sc">:</span><span class="fu">min</span>(k, <span class="fu">length</span>(top_features))]</span>
+<span id="cb5-56"><a href="#cb5-56" tabindex="-1"></a></span>
+<span id="cb5-57"><a href="#cb5-57" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">length</span>(features_k) <span class="sc">&lt;</span> k) <span class="cf">next</span></span>
+<span id="cb5-58"><a href="#cb5-58" tabindex="-1"></a></span>
+<span id="cb5-59"><a href="#cb5-59" tabindex="-1"></a>    <span class="co"># ------------------------------------------------------</span></span>
+<span id="cb5-60"><a href="#cb5-60" tabindex="-1"></a>    <span class="co"># 6. Fit model</span></span>
+<span id="cb5-61"><a href="#cb5-61" tabindex="-1"></a>    <span class="co"># ------------------------------------------------------</span></span>
+<span id="cb5-62"><a href="#cb5-62" tabindex="-1"></a>    model <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(</span>
+<span id="cb5-63"><a href="#cb5-63" tabindex="-1"></a>      <span class="at">x =</span> x_a[, features_k, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb5-64"><a href="#cb5-64" tabindex="-1"></a>      <span class="at">y =</span> <span class="fu">as.factor</span>(y_a),</span>
+<span id="cb5-65"><a href="#cb5-65" tabindex="-1"></a>      <span class="at">ntree =</span> <span class="dv">500</span></span>
+<span id="cb5-66"><a href="#cb5-66" tabindex="-1"></a>    )</span>
+<span id="cb5-67"><a href="#cb5-67" tabindex="-1"></a></span>
+<span id="cb5-68"><a href="#cb5-68" tabindex="-1"></a>    <span class="co"># ------------------------------------------------------</span></span>
+<span id="cb5-69"><a href="#cb5-69" tabindex="-1"></a>    <span class="co"># 7. Predict</span></span>
+<span id="cb5-70"><a href="#cb5-70" tabindex="-1"></a>    <span class="co"># ------------------------------------------------------</span></span>
+<span id="cb5-71"><a href="#cb5-71" tabindex="-1"></a>    prob <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb5-72"><a href="#cb5-72" tabindex="-1"></a>      model,</span>
+<span id="cb5-73"><a href="#cb5-73" tabindex="-1"></a>      x_b[, features_k, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb5-74"><a href="#cb5-74" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;prob&quot;</span></span>
+<span id="cb5-75"><a href="#cb5-75" tabindex="-1"></a>    )[, <span class="dv">2</span>]</span>
+<span id="cb5-76"><a href="#cb5-76" tabindex="-1"></a></span>
+<span id="cb5-77"><a href="#cb5-77" tabindex="-1"></a>    fold_auc <span class="ot">&lt;-</span> <span class="fu">c</span>(fold_auc, <span class="fu">get_auc</span>(y_b, prob))</span>
+<span id="cb5-78"><a href="#cb5-78" tabindex="-1"></a>  }</span>
+<span id="cb5-79"><a href="#cb5-79" tabindex="-1"></a></span>
+<span id="cb5-80"><a href="#cb5-80" tabindex="-1"></a>  <span class="co"># ----------------------------------------------------------</span></span>
+<span id="cb5-81"><a href="#cb5-81" tabindex="-1"></a>  <span class="co"># 8. Store mean performance</span></span>
+<span id="cb5-82"><a href="#cb5-82" tabindex="-1"></a>  <span class="co"># ----------------------------------------------------------</span></span>
+<span id="cb5-83"><a href="#cb5-83" tabindex="-1"></a>  results[<span class="fu">as.character</span>(k)] <span class="ot">&lt;-</span> <span class="fu">mean</span>(fold_auc, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb5-84"><a href="#cb5-84" tabindex="-1"></a>}</span>
+<span id="cb5-85"><a href="#cb5-85" tabindex="-1"></a></span>
+<span id="cb5-86"><a href="#cb5-86" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb5-87"><a href="#cb5-87" tabindex="-1"></a><span class="co"># 9. Select best subset size</span></span>
+<span id="cb5-88"><a href="#cb5-88" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb5-89"><a href="#cb5-89" tabindex="-1"></a>best_k <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">names</span>(<span class="fu">which.max</span>(results)))</span>
+<span id="cb5-90"><a href="#cb5-90" tabindex="-1"></a>best_features <span class="ot">&lt;-</span> top_features[<span class="dv">1</span><span class="sc">:</span>best_k]</span>
+<span id="cb5-91"><a href="#cb5-91" tabindex="-1"></a></span>
+<span id="cb5-92"><a href="#cb5-92" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Best subset size:&quot;</span>, best_k, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## Best subset size: 9</code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># 10. Fit final model on full training set</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>final_model <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">x =</span> x_train_all[, best_features, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="at">y =</span> <span class="fu">as.factor</span>(y_train_all),</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>  <span class="at">ntree =</span> <span class="dv">500</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>)</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co"># 11. Evaluate on test set</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>test_prob <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>  final_model,</span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  test_data[, best_features, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">&quot;prob&quot;</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a>)[, <span class="dv">2</span>]</span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a>final_auc <span class="ot">&lt;-</span> <span class="fu">get_auc</span>(test_data<span class="sc">$</span>y, test_prob)</span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Final test AUC:&quot;</span>, final_auc, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## Final test AUC: 0.8372222</code></pre>
+<div id="approach-2" class="section level2" number="2.1">
+<h2><span class="header-section-number">2.1</span> Approach 2</h2>
+<ol style="list-style-type: decimal">
+<li>Split data into <strong>analysis</strong> and
+<strong>assessment</strong> sets.</li>
+<li>For each resample:
+<ol style="list-style-type: decimal">
+<li>Rank predictors using the <strong>analysis set</strong>.</li>
+<li>For feature subset sizes from <strong>5 down to 1</strong>:
 <ul>
-<li>Implement two filter methods and compare their results.</li>
-</ul>
+<li>Fit the model using the feature subset on the <strong>analysis
+set</strong>.</li>
+<li>Predict the <strong>assessment set</strong>.</li>
+</ul></li>
+<li>End feature subset loop.</li>
+</ol></li>
+<li>Average the resampled performance for each model and feature subset
+size.</li>
+<li>Fit the best feature subset using the <strong>entire training
+set</strong>.</li>
+<li>Choose the model and feature subset with the best performance.</li>
+<li>Fit the final model using the best feature subset on the
+<strong>entire training set</strong>.</li>
+</ol>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co"># Helper function</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>get_auc <span class="ot">&lt;-</span> <span class="cf">function</span>(obs, prob) {</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  <span class="fu">as.numeric</span>(<span class="fu">roc</span>(obs, prob, <span class="at">quiet =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>auc)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>}</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co"># 2. Create resampling folds (analysis / assessment)</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>K <span class="ot">&lt;-</span> <span class="dv">5</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>fold_id <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span>K, <span class="at">length.out =</span> <span class="fu">nrow</span>(train_data)))</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a><span class="co"># 3. Storage for results</span></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">numeric</span>(<span class="fu">length</span>(subset_sizes))</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="fu">names</span>(results) <span class="ot">&lt;-</span> <span class="fu">as.character</span>(subset_sizes)</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co"># 4. Loop over feature subset sizes</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="cf">for</span> (k <span class="cf">in</span> subset_sizes) {</span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a>  fold_auc <span class="ot">&lt;-</span> <span class="fu">c</span>()</span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a>  <span class="co"># ==========================================================</span></span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a>  <span class="co"># For each resample (CV loop)</span></span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a>  <span class="co"># ==========================================================</span></span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a>  <span class="cf">for</span> (f <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span>K) {</span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a></span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a>    <span class="co"># --------------------------------------------------------</span></span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a>    <span class="co"># Split into analysis / assessment</span></span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a>    <span class="co"># --------------------------------------------------------</span></span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a>    analysis_set   <span class="ot">&lt;-</span> train_data[fold_id <span class="sc">!=</span> f, ]</span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a>    assessment_set <span class="ot">&lt;-</span> train_data[fold_id <span class="sc">==</span> f, ]</span>
+<span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a></span>
+<span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a>    x_a <span class="ot">&lt;-</span> analysis_set[, <span class="fu">setdiff</span>(<span class="fu">names</span>(train_data), <span class="st">&quot;y&quot;</span>), drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb9-39"><a href="#cb9-39" tabindex="-1"></a>    y_a <span class="ot">&lt;-</span> analysis_set<span class="sc">$</span>y</span>
+<span id="cb9-40"><a href="#cb9-40" tabindex="-1"></a></span>
+<span id="cb9-41"><a href="#cb9-41" tabindex="-1"></a>    x_b <span class="ot">&lt;-</span> assessment_set[, <span class="fu">setdiff</span>(<span class="fu">names</span>(train_data), <span class="st">&quot;y&quot;</span>), drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb9-42"><a href="#cb9-42" tabindex="-1"></a>    y_b <span class="ot">&lt;-</span> assessment_set<span class="sc">$</span>y</span>
+<span id="cb9-43"><a href="#cb9-43" tabindex="-1"></a></span>
+<span id="cb9-44"><a href="#cb9-44" tabindex="-1"></a>    <span class="co"># --------------------------------------------------------</span></span>
+<span id="cb9-45"><a href="#cb9-45" tabindex="-1"></a>    <span class="co"># Rank predictors using ANALYSIS set only</span></span>
+<span id="cb9-46"><a href="#cb9-46" tabindex="-1"></a>    <span class="co"># --------------------------------------------------------</span></span>
+<span id="cb9-47"><a href="#cb9-47" tabindex="-1"></a>    rf_rank <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(</span>
+<span id="cb9-48"><a href="#cb9-48" tabindex="-1"></a>      <span class="at">x =</span> x_a,</span>
+<span id="cb9-49"><a href="#cb9-49" tabindex="-1"></a>      <span class="at">y =</span> <span class="fu">as.factor</span>(y_a),</span>
+<span id="cb9-50"><a href="#cb9-50" tabindex="-1"></a>      <span class="at">importance =</span> <span class="cn">TRUE</span></span>
+<span id="cb9-51"><a href="#cb9-51" tabindex="-1"></a>    )</span>
+<span id="cb9-52"><a href="#cb9-52" tabindex="-1"></a></span>
+<span id="cb9-53"><a href="#cb9-53" tabindex="-1"></a>    imp <span class="ot">&lt;-</span> <span class="fu">importance</span>(rf_rank, <span class="at">type =</span> <span class="dv">2</span>)[, <span class="dv">1</span>]</span>
+<span id="cb9-54"><a href="#cb9-54" tabindex="-1"></a>    ranked <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">sort</span>(imp, <span class="at">decreasing =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb9-55"><a href="#cb9-55" tabindex="-1"></a></span>
+<span id="cb9-56"><a href="#cb9-56" tabindex="-1"></a>    features_k <span class="ot">&lt;-</span> ranked[<span class="dv">1</span><span class="sc">:</span><span class="fu">min</span>(k, <span class="fu">length</span>(ranked))]</span>
+<span id="cb9-57"><a href="#cb9-57" tabindex="-1"></a></span>
+<span id="cb9-58"><a href="#cb9-58" tabindex="-1"></a>    <span class="co"># --------------------------------------------------------</span></span>
+<span id="cb9-59"><a href="#cb9-59" tabindex="-1"></a>    <span class="co"># Fit model on analysis set</span></span>
+<span id="cb9-60"><a href="#cb9-60" tabindex="-1"></a>    <span class="co"># --------------------------------------------------------</span></span>
+<span id="cb9-61"><a href="#cb9-61" tabindex="-1"></a>    model <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(</span>
+<span id="cb9-62"><a href="#cb9-62" tabindex="-1"></a>      <span class="at">x =</span> x_a[, features_k, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb9-63"><a href="#cb9-63" tabindex="-1"></a>      <span class="at">y =</span> <span class="fu">as.factor</span>(y_a),</span>
+<span id="cb9-64"><a href="#cb9-64" tabindex="-1"></a>      <span class="at">ntree =</span> <span class="dv">500</span></span>
+<span id="cb9-65"><a href="#cb9-65" tabindex="-1"></a>    )</span>
+<span id="cb9-66"><a href="#cb9-66" tabindex="-1"></a></span>
+<span id="cb9-67"><a href="#cb9-67" tabindex="-1"></a>    <span class="co"># --------------------------------------------------------</span></span>
+<span id="cb9-68"><a href="#cb9-68" tabindex="-1"></a>    <span class="co"># Predict assessment set</span></span>
+<span id="cb9-69"><a href="#cb9-69" tabindex="-1"></a>    <span class="co"># --------------------------------------------------------</span></span>
+<span id="cb9-70"><a href="#cb9-70" tabindex="-1"></a>    prob <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb9-71"><a href="#cb9-71" tabindex="-1"></a>      model,</span>
+<span id="cb9-72"><a href="#cb9-72" tabindex="-1"></a>      x_b[, features_k, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb9-73"><a href="#cb9-73" tabindex="-1"></a>      <span class="at">type =</span> <span class="st">&quot;prob&quot;</span></span>
+<span id="cb9-74"><a href="#cb9-74" tabindex="-1"></a>    )[, <span class="dv">2</span>]</span>
+<span id="cb9-75"><a href="#cb9-75" tabindex="-1"></a></span>
+<span id="cb9-76"><a href="#cb9-76" tabindex="-1"></a>    fold_auc <span class="ot">&lt;-</span> <span class="fu">c</span>(fold_auc, <span class="fu">get_auc</span>(y_b, prob))</span>
+<span id="cb9-77"><a href="#cb9-77" tabindex="-1"></a>  }</span>
+<span id="cb9-78"><a href="#cb9-78" tabindex="-1"></a></span>
+<span id="cb9-79"><a href="#cb9-79" tabindex="-1"></a>  <span class="co"># ----------------------------------------------------------</span></span>
+<span id="cb9-80"><a href="#cb9-80" tabindex="-1"></a>  <span class="co"># Average performance for subset size k</span></span>
+<span id="cb9-81"><a href="#cb9-81" tabindex="-1"></a>  <span class="co"># ----------------------------------------------------------</span></span>
+<span id="cb9-82"><a href="#cb9-82" tabindex="-1"></a>  results[<span class="fu">as.character</span>(k)] <span class="ot">&lt;-</span> <span class="fu">mean</span>(fold_auc)</span>
+<span id="cb9-83"><a href="#cb9-83" tabindex="-1"></a>}</span>
+<span id="cb9-84"><a href="#cb9-84" tabindex="-1"></a></span>
+<span id="cb9-85"><a href="#cb9-85" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb9-86"><a href="#cb9-86" tabindex="-1"></a><span class="co"># 5. Select best subset size</span></span>
+<span id="cb9-87"><a href="#cb9-87" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb9-88"><a href="#cb9-88" tabindex="-1"></a>best_k <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">names</span>(<span class="fu">which.max</span>(results)))</span>
+<span id="cb9-89"><a href="#cb9-89" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Best subset size:&quot;</span>, best_k, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## Best subset size: 8</code></pre>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co"># 6. Final ranking on full training set</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>rf_final_rank <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  <span class="at">x =</span> train_data[, <span class="fu">setdiff</span>(<span class="fu">names</span>(train_data), <span class="st">&quot;y&quot;</span>)],</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  <span class="at">y =</span> <span class="fu">as.factor</span>(train_data<span class="sc">$</span>y),</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  <span class="at">importance =</span> <span class="cn">TRUE</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>)</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>imp_final <span class="ot">&lt;-</span> <span class="fu">importance</span>(rf_final_rank, <span class="at">type =</span> <span class="dv">2</span>)[, <span class="dv">1</span>]</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a>ranked_final <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">sort</span>(imp_final, <span class="at">decreasing =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>best_features <span class="ot">&lt;-</span> ranked_final[<span class="dv">1</span><span class="sc">:</span>best_k]</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co"># 7. Fit final model on full training set</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>final_model <span class="ot">&lt;-</span> <span class="fu">randomForest</span>(</span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>  <span class="at">x =</span> train_data[, best_features, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a>  <span class="at">y =</span> <span class="fu">as.factor</span>(train_data<span class="sc">$</span>y),</span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>  <span class="at">ntree =</span> <span class="dv">500</span></span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>)</span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a><span class="co"># 8. Evaluate on test set</span></span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a><span class="co"># ============================================================</span></span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a>test_prob <span class="ot">&lt;-</span> <span class="fu">predict</span>(</span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a>  final_model,</span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a>  test_data[, best_features, <span class="at">drop =</span> <span class="cn">FALSE</span>],</span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">&quot;prob&quot;</span></span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a>)[, <span class="dv">2</span>]</span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a></span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a>final_auc <span class="ot">&lt;-</span> <span class="fu">get_auc</span>(test_data<span class="sc">$</span>y, test_prob)</span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a></span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Final test AUC:&quot;</span>, final_auc, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+<pre><code>## Final test AUC: 0.8516667</code></pre>
 </div>
-<div id="wrapper-methods" class="section level2" number="3.2">
-<h2><span class="header-section-number">3.2</span> Wrapper methods</h2>
-<ul>
-<li>Implement two wrapper methods and compare their results.</li>
-</ul>
-</div>
-<div id="embedded-methods" class="section level2" number="3.3">
-<h2><span class="header-section-number">3.3</span> Embedded methods</h2>
-<ul>
-<li>Implement two embedded methods and compare their results.</li>
-</ul>
-</div>
-</div>
-<div id="discussion" class="section level1" number="4">
-<h1><span class="header-section-number">4</span> Discussion</h1>
-<ul>
-<li><p>Which method achieved best predictive performance?</p></li>
-<li><p>Which features appear in every method?</p></li>
-</ul>
 </div>
 
 

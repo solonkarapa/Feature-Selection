@@ -33,17 +33,17 @@ library(glmnet)
 
 https://github.com/solonkarapa/Feature-Selection/
 
-
 ![](slides_files/images/github_qr.png){width="100%"}
-
 
 > Copyright © 2026 Solon Karapanagiotis -- This presentation and its contents may not be shared, copied, or redistributed without permission.
 
 ## Introduction
 
--   Datasets often have many features—but not all are useful.
--   Some features can be redundant or noisy.
--   Key question: How do we achieve a "good" selection of features?
+-  Modern datasets often contain
+    - Hundreds to millions of features
+    - Redundant or irrelevant features
+    - Noisy measurements
+-   Key question: Should we care?
 
 ## Learning Outcomes
 
@@ -64,10 +64,10 @@ By the end of the session, students will be able to:
 -   $X ∈ ℝ^{n × p}$ — feature matrix
 -   $x_i ∈ ℝ^p$ — feature vector for observation $i$
 -   $y_i$ — outcome/response for observation $i$
--   $y ∈ ℝ^n$ — response vector (regression)
--   $y ∈ \{0,1\}^n$ — response vector (binary classification)
+-   $y \in ℝ^n$ — response vector (regression)
+-   $y \in \{0,1\}^n$ — response vector (binary classification)
 -   $f(x)$ — prediction function (model)
--   $ŷ_i = f(x_i)$ — predicted response for observation $i$
+-   $\hat{y}_i = f(x_i)$ — predicted response for observation $i$
 :::
 ::::
 
@@ -96,13 +96,13 @@ A common definition is
 
 -   Feature selection maintains the meaning of the features and gives models better interpretability.
 
--   Feature extraction = create new features from data (eg PCA)
+-   Feature extraction = create new features from data (e.g. PCA)
 
 -   Feature selection = choose a subset of existing features
 
 ## What is Feature Selection?
 
-Selecting a subset of input features that
+the process of selecting a subset of features that:
 
 1.  maximizes predictive ability, and
 2.  enhances interpretability.
@@ -155,7 +155,7 @@ Simulation setting
 -   $p$ = 20
 -   $\text{RMSE} = \sqrt{ \frac{1}{n_{test}} \sum_{i=1}^{n_{test}} \left( y_i - \hat{y}_i \right)^2 }$
 
-For details see Practical 1
+For details see Practical 1.
 :::
 :::::
 
@@ -165,7 +165,7 @@ Two main problems:
 
 1.  High dimensionality.
 
-2.  Model intepretability. It is often the case that some or many of the features are not associated with the outcome. Including such irrelevant (or redundant) features leads to unnecessary complexity in the resulting model. By removing these variables—that is, by setting the corresponding coefficient estimates to zero—we can obtain a model that is more easily interpreted.
+2.  Model intepretability. It is often the case that some or many of the features are not associated with the outcome. Including such irrelevant (or redundant) features leads to unnecessary loss of performance. Further, by removing these features—that is, by setting the corresponding coefficient estimates to zero—we can obtain a model that is more easily interpreted.
 
 ## Illustration 2
 
@@ -207,6 +207,10 @@ Simulation setting
 
 > Practical 1
 
+https://github.com/solonkarapa/Feature-Selection/
+
+![](slides_files/images/github_qr.png){width="100%"}
+
 ## Feature Selection Methods Overview
 
 A feature selection method (algorithm or strategy) can be seen as the combination of a search technique for proposing new feature subsets, along with an evaluation measure which scores the different feature subsets.
@@ -224,13 +228,13 @@ There are three main families of methods:
 A few examples are:
 
 -   Correlation Coefficient
--   Odds-ratio and Chi-Square Test - used for categorical features (eg [epitools::oddsratio()](https://cran.r-project.org/web/packages/epitools/index.html))
--   Mutual Information - measures dependency between features and outcome (eg [FSelectorRcpp](https://cran.r-project.org/web/packages/FSelectorRcpp/index.html))
+-   Odds-ratio and Chi-Square Test - used for categorical features (e.g. [epitools::oddsratio()](https://cran.r-project.org/web/packages/epitools/index.html))
+-   Mutual Information - measures dependency between features and outcome (e.g. [FSelectorRcpp](https://cran.r-project.org/web/packages/FSelectorRcpp/index.html))
 -   ...
 
 ## Filter methods
 
--   When the outcome is categorical, the relationship between the predictor and outcome forms a contingency table.
+-   When the outcome is categorical, the relationship between the feature and outcome forms a contingency table.
 
 -   When there are exactly two classes for the feature, the odds-ratio (OR) is a choice.
 
@@ -550,7 +554,7 @@ $$ SSE_{lasso} = \sum^n_{i=1}(y_i - \hat{y}_i)^2 + \lambda \sum^p_{j=1} |\beta_j
 
 -   This is the least absolute shrinkage and selection operator (lasso).
 -   As the regression coefficients grow large, the penalty must also increase to enforce the minimization.
--   By having this the penalization term, the lasso forces regression coefficients to become smaller and shrink to zero.
+-   By having the penalization term, the lasso forces regression coefficients to become smaller and shrink to zero.
 -   In doing so, the lasso practically selects model terms down to an optimal subset of features.
 
 ## Embedded methods - The LASSO
@@ -610,7 +614,7 @@ Pros:
 
 Cons:
 
--   Model-dependent. If the data are better fit by a non-intrinsic feature selection type of model, then predictive performance may be sub-optimal when all features are used.
+-   Model-dependent. 
 
 ## Summary Methods {.center}
 
@@ -642,7 +646,7 @@ Suppose a model has five features (A–E), each with an importance score derived
 :::
 
 ::: column
-1.  Rank predictors using the training set.
+1.  Rank features using the training set.
 2.  For feature subset sizes from **5 down to 1**:
     1.  For each resample:
         -   Fit the model using the feature subset on the **analysis set**.
@@ -669,7 +673,7 @@ A better way:
 
 1.  Split data into **analysis** and **assessment** sets.
 2.  For each resample:
-    1.  Rank predictors using the **analysis set**.
+    1.  Rank features using the **analysis set**.
     2.  For feature subset sizes from **5 down to 1**:
         -   Fit the model using the feature subset on the **analysis set**.
         -   Predict the **assessment set**.
@@ -677,7 +681,10 @@ A better way:
 3.  Average the resampled performance for each model and feature subset size.
 4.  Fit the best feature subset using the **entire training set**.
 5.  Choose the model and feature subset with the best performance.
-6.  Fit the final model using the best feature subset on the **entire training set**.
+6.  Fit the final model using the best feature subset on the **entire training set**.  
+
+
+- Basically, the subset size is treated as a tuning parameter.
 
 ##  {.center}
 
@@ -686,21 +693,20 @@ A better way:
 ## Practical Recommendations (with a pinch of salt) {.smaller}
 
 1.  Always start with data curation steps:
-    -   eg consider removing constant / near-zero variance features.
+    -   e.g. consider removing constant / near-zero variance features.
 2.  Use filter methods as a baseline, fast screening approach.
 3.  As a general feature selection strategy would be to use models that can intrinsically eliminate features from the model while the model is fit (embedded methods).
     -   These models may yield good results much more quickly than wrapper methods.
     -   Note that it is unrealistic to expect that models using embedded feature selection would select the same feature subset, especially if linear and nonlinear methods are being compared.
-4.  If a (non-)linear embedded method has good predictive performance, then we could proceed to a wrapper method that is combined with a (non-)linear model.
-5.  If multiple approaches select large feature sets then this may imply that reducing the number of features may not be feasible.
-6.  **Most important**: Feature selection must happen inside resampling, not before it.
-7.  **Stability matters more than importance**: Good feature sets should be consistent across folds and not wildly changing ranking.
-8.  **There is no single best feature selection method.**
+4.  If multiple approaches select large feature sets then this may imply that reducing the number of features may not be feasible.
+5.  **Most important**: Feature selection must happen inside resampling, not before it.
+6.  **Stability matters more than importance**: Good feature sets should be consistent across folds and not wildly changing ranking.
+7.  **There is no single best feature selection method.**
 
 ## Resources
 
 -   Hastie, Trevor, Robert Tibshirani, and Jerome Friedman. [The Elements of Statistical Learning, 2017](https://hastie.su.domains/ElemStatLearn/)
--   James, Gareth, Daniela Witten, Trevor Hastie, and Robert Tibshirani. [An Introduction to Statistical Learning: with Applications in R](https://www.statlearning.com/), 2013. (and Python)
+-   James, Gareth, Daniela Witten, Trevor Hastie, and Robert Tibshirani. [An Introduction to Statistical Learning: with Applications in R](https://www.statlearning.com/), 2013 (and Python)
 -   Guyon, Isabelle, and André Elisseeff. "An introduction to variable and feature selection." Journal of Machine Learning Research (2003)
--   Kuhn, Max, and Kjell Johnson. [Applied Predictive Modeling](https://link.springer.com/book/10.1007/978-1-4614-6849-3), 2013.
--   Liu, H. (2011). [Feature Selection](https://link.springer.com/rwe/10.1007/978-0-387-30164-8_306). In: Sammut, C., Webb, G.I. (eds) Encyclopedia of Machine Learning.
+-   Kuhn, Max, and Kjell Johnson. [Applied Predictive Modeling](https://link.springer.com/book/10.1007/978-1-4614-6849-3), 2013
+-   Liu, H. (2011). [Feature Selection](https://link.springer.com/rwe/10.1007/978-0-387-30164-8_306). In: Sammut, C., Webb, G.I. Encyclopedia of Machine Learning

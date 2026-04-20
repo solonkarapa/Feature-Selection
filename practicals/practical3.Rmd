@@ -15,7 +15,8 @@ output:
         df_print: paged
 ---
 
-# Introduction
+© `r format(Sys.Date(), "%Y")` Solon Karapanagiotis. All rights reserved.
+
 Explore the impact of overfitting to feature selection. 
 
 # Dataset
@@ -26,7 +27,7 @@ The same as in Practical 2. It contains:
 - a binary outcome $y \in \{0,1\}$.
 
 ```{r}
-load(here::here("data_practical2.Rdata"))
+load(here::here("data", "data_practical2.Rdata"))
 ```
 
 ```{r}

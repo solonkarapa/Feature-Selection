@@ -170,9 +170,13 @@ Solon Karapanagiotis
 <section id="introduction" class="slide level2">
 <h2>Introduction</h2>
 <ul>
-<li class="fragment">Datasets often have many features—but not all are useful.</li>
-<li class="fragment">Some features can be redundant or noisy.</li>
-<li class="fragment">Key question: How do we achieve a “good” selection of features?</li>
+<li class="fragment">Modern datasets often contain
+<ul>
+<li class="fragment">Hundreds to millions of features</li>
+<li class="fragment">Redundant or irrelevant features</li>
+<li class="fragment">Noisy measurements</li>
+</ul></li>
+<li class="fragment">Key question: Should we care?</li>
 </ul>
 </section>
 <section id="learning-outcomes" class="slide level2">
@@ -195,10 +199,10 @@ Solon Karapanagiotis
 <li><span class="math inline">\(X ∈ ℝ^{n × p}\)</span> — feature matrix</li>
 <li><span class="math inline">\(x_i ∈ ℝ^p\)</span> — feature vector for observation <span class="math inline">\(i\)</span></li>
 <li><span class="math inline">\(y_i\)</span> — outcome/response for observation <span class="math inline">\(i\)</span></li>
-<li><span class="math inline">\(y ∈ ℝ^n\)</span> — response vector (regression)</li>
-<li><span class="math inline">\(y ∈ \{0,1\}^n\)</span> — response vector (binary classification)</li>
+<li><span class="math inline">\(y \in ℝ^n\)</span> — response vector (regression)</li>
+<li><span class="math inline">\(y \in \{0,1\}^n\)</span> — response vector (binary classification)</li>
 <li><span class="math inline">\(f(x)\)</span> — prediction function (model)</li>
-<li><span class="math inline">\(ŷ_i = f(x_i)\)</span> — predicted response for observation <span class="math inline">\(i\)</span></li>
+<li><span class="math inline">\(\hat{y}_i = f(x_i)\)</span> — predicted response for observation <span class="math inline">\(i\)</span></li>
 </ul>
 </div><div class="column">
 <p><img data-src="slides_files/images/Data_structure_overview.png" style="width:100.0%"></p>
@@ -226,13 +230,13 @@ Solon Karapanagiotis
 <ul>
 <li class="fragment"><p>Feature extraction creates new features from functions of the original features, whereas feature selection finds a subset of the features.</p></li>
 <li class="fragment"><p>Feature selection maintains the meaning of the features and gives models better interpretability.</p></li>
-<li class="fragment"><p>Feature extraction = create new features from data (eg PCA)</p></li>
+<li class="fragment"><p>Feature extraction = create new features from data (e.g.&nbsp;PCA)</p></li>
 <li class="fragment"><p>Feature selection = choose a subset of existing features</p></li>
 </ul>
 </section>
 <section id="what-is-feature-selection" class="slide level2">
 <h2>What is Feature Selection?</h2>
-<p>Selecting a subset of input features that</p>
+<p>the process of selecting a subset of features that:</p>
 <ol type="1">
 <li class="fragment">maximizes predictive ability, and</li>
 <li class="fragment">enhances interpretability.</li>
@@ -276,7 +280,7 @@ Solon Karapanagiotis
 <li class="fragment"><span class="math inline">\(p\)</span> = 20</li>
 <li class="fragment"><span class="math inline">\(\text{RMSE} = \sqrt{ \frac{1}{n_{test}} \sum_{i=1}^{n_{test}} \left( y_i - \hat{y}_i \right)^2 }\)</span></li>
 </ul>
-<p>For details see Practical 1</p>
+<p>For details see Practical 1.</p>
 </div></div>
 </section>
 <section id="why-feature-selection-1" class="slide level2">
@@ -284,7 +288,7 @@ Solon Karapanagiotis
 <p>Two main problems:</p>
 <ol type="1">
 <li class="fragment"><p>High dimensionality.</p></li>
-<li class="fragment"><p>Model intepretability. It is often the case that some or many of the features are not associated with the outcome. Including such irrelevant (or redundant) features leads to unnecessary complexity in the resulting model. By removing these variables—that is, by setting the corresponding coefficient estimates to zero—we can obtain a model that is more easily interpreted.</p></li>
+<li class="fragment"><p>Model intepretability. It is often the case that some or many of the features are not associated with the outcome. Including such irrelevant (or redundant) features leads to unnecessary loss of performance. Further, by removing these features—that is, by setting the corresponding coefficient estimates to zero—we can obtain a model that is more easily interpreted.</p></li>
 </ol>
 </section>
 <section id="illustration-2" class="slide level2">
@@ -327,7 +331,9 @@ Solon Karapanagiotis
 <blockquote>
 <p>Practical 1</p>
 </blockquote>
-</section>
+<p>https://github.com/solonkarapa/Feature-Selection/</p>
+
+<img data-src="slides_files/images/github_qr.png" style="width:100.0%" class="r-stretch"></section>
 <section id="feature-selection-methods-overview" class="slide level2">
 <h2>Feature Selection Methods Overview</h2>
 <p>A feature selection method (algorithm or strategy) can be seen as the combination of a search technique for proposing new feature subsets, along with an evaluation measure which scores the different feature subsets.</p>
@@ -344,15 +350,15 @@ Solon Karapanagiotis
 <p>A few examples are:</p>
 <ul>
 <li class="fragment">Correlation Coefficient</li>
-<li class="fragment">Odds-ratio and Chi-Square Test - used for categorical features (eg <a href="https://cran.r-project.org/web/packages/epitools/index.html">epitools::oddsratio()</a>)</li>
-<li class="fragment">Mutual Information - measures dependency between features and outcome (eg <a href="https://cran.r-project.org/web/packages/FSelectorRcpp/index.html">FSelectorRcpp</a>)</li>
+<li class="fragment">Odds-ratio and Chi-Square Test - used for categorical features (e.g.&nbsp;<a href="https://cran.r-project.org/web/packages/epitools/index.html">epitools::oddsratio()</a>)</li>
+<li class="fragment">Mutual Information - measures dependency between features and outcome (e.g.&nbsp;<a href="https://cran.r-project.org/web/packages/FSelectorRcpp/index.html">FSelectorRcpp</a>)</li>
 <li class="fragment">…</li>
 </ul>
 </section>
 <section id="filter-methods-1" class="slide level2">
 <h2>Filter methods</h2>
 <ul>
-<li class="fragment"><p>When the outcome is categorical, the relationship between the predictor and outcome forms a contingency table.</p></li>
+<li class="fragment"><p>When the outcome is categorical, the relationship between the feature and outcome forms a contingency table.</p></li>
 <li class="fragment"><p>When there are exactly two classes for the feature, the odds-ratio (OR) is a choice.</p></li>
 <li class="fragment"><p>OR calculation:</p></li>
 </ul>
@@ -613,7 +619,7 @@ F-statistic: 138.7 on 3 and 196 DF,  p-value: &lt; 2.2e-16</code></pre>
 <ul>
 <li class="fragment">This is the least absolute shrinkage and selection operator (lasso).</li>
 <li class="fragment">As the regression coefficients grow large, the penalty must also increase to enforce the minimization.</li>
-<li class="fragment">By having this the penalization term, the lasso forces regression coefficients to become smaller and shrink to zero.</li>
+<li class="fragment">By having the penalization term, the lasso forces regression coefficients to become smaller and shrink to zero.</li>
 <li class="fragment">In doing so, the lasso practically selects model terms down to an optimal subset of features.</li>
 </ul>
 </section>
@@ -650,7 +656,7 @@ x5          .         </code></pre>
 </ul>
 <p>Cons:</p>
 <ul>
-<li class="fragment">Model-dependent. If the data are better fit by a non-intrinsic feature selection type of model, then predictive performance may be sub-optimal when all features are used.</li>
+<li class="fragment">Model-dependent.</li>
 </ul>
 </section>
 <section id="summary-methods" class="slide level2 center">
@@ -690,7 +696,7 @@ x5          .         </code></pre>
 </ul>
 </div><div class="column">
 <ol type="1">
-<li class="fragment">Rank predictors using the training set.</li>
+<li class="fragment">Rank features using the training set.</li>
 <li class="fragment">For feature subset sizes from <strong>5 down to 1</strong>:
 <ol type="1">
 <li class="fragment">For each resample:
@@ -723,7 +729,7 @@ x5          .         </code></pre>
 <li class="fragment">Split data into <strong>analysis</strong> and <strong>assessment</strong> sets.</li>
 <li class="fragment">For each resample:
 <ol type="1">
-<li class="fragment">Rank predictors using the <strong>analysis set</strong>.</li>
+<li class="fragment">Rank features using the <strong>analysis set</strong>.</li>
 <li class="fragment">For feature subset sizes from <strong>5 down to 1</strong>:
 <ul>
 <li class="fragment">Fit the model using the feature subset on the <strong>analysis set</strong>.</li>
@@ -735,7 +741,11 @@ x5          .         </code></pre>
 <li class="fragment">Fit the best feature subset using the <strong>entire training set</strong>.</li>
 <li class="fragment">Choose the model and feature subset with the best performance.</li>
 <li class="fragment">Fit the final model using the best feature subset on the <strong>entire training set</strong>.</li>
+<li class="fragment">End resample loop.</li>
 </ol>
+<ul>
+<li class="fragment">Basically, the subset size is treated as a tuning parameter.</li>
+</ul>
 </section>
 <section id="section-2" class="slide level2 center">
 <h2></h2>

@@ -34,7 +34,7 @@ The dataset contains:
 - a binary outcome $y \in \{0,1\}$.
 
 ```{r}
-load(here::here("data_practical2.Rdata"))
+load(here::here("data", "data_practical2.Rdata"))
 ```
 
 ```{r}
