@@ -19,9 +19,8 @@ Datasets
 . 
 ├── data/          # datasets used in practicals  
 ├── practicals/    # practical lab sessions (RMarkdown)   
-├── practicals/demos # code for the practicals and data generating functions
+├── practicals/demos # code for the practicals and data generating functions.  
 ├── slides/        # lecture slides (HTML/qmd)  
-
 
 ---
 
