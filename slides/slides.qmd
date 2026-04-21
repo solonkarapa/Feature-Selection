@@ -4,7 +4,7 @@ author:
  - name: Solon Karapanagiotis
    email: sk921
    affiliations: MRC Biostatistics Unit, University of Cambridge
-date: "21-04-2026"
+date: "04-21-2026"
 format: 
     revealjs:
         margin: 0.1
@@ -29,20 +29,16 @@ library(ggplot2)
 library(glmnet)
 ```
 
-## Materials
-
-https://github.com/solonkarapa/Feature-Selection/
-
-![](slides_files/images/github_qr.png){width="100%"}
+## 
 
 > Copyright © 2026 Solon Karapanagiotis -- This presentation and its contents may not be shared, copied, or redistributed without permission.
 
 ## Introduction
 
--  Modern datasets often contain
-    - Hundreds to millions of features
-    - Redundant or irrelevant features
-    - Noisy measurements
+-   Modern datasets often contain
+    -   Hundreds to millions of features
+    -   Redundant or irrelevant features
+    -   Noisy measurements
 -   Key question: Should we care?
 
 ## Learning Outcomes
@@ -102,7 +98,7 @@ A common definition is
 
 ## What is Feature Selection?
 
-the process of selecting a subset of features that:
+The process of selecting a subset of features that:
 
 1.  maximizes predictive ability, and
 2.  enhances interpretability.
@@ -614,7 +610,7 @@ Pros:
 
 Cons:
 
--   Model-dependent. 
+-   Model-dependent.
 
 ## Summary Methods {.center}
 
@@ -681,10 +677,9 @@ A better way:
 3.  Average the resampled performance for each model and feature subset size.
 4.  Fit the best feature subset using the **entire training set**.
 5.  Choose the model and feature subset with the best performance.
-6.  Fit the final model using the best feature subset on the **entire training set**.  
+6.  Fit the final model using the best feature subset on the **entire training set**.
 
-
-- Basically, the subset size is treated as a tuning parameter.
+-   Basically, the subset size is treated as a tuning parameter.
 
 ##  {.center}
 

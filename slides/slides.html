@@ -10,7 +10,7 @@
   <meta name="generator" content="quarto-1.7.32">
 
   <meta name="author" content="Solon Karapanagiotis">
-  <meta name="dcterms.date" content="2027-09-04">
+  <meta name="dcterms.date" content="2026-04-21">
   <title>Feature Selection</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -149,7 +149,7 @@ Solon Karapanagiotis
     </div>
 </div>
 
-  <p class="date">2027-09-04</p>
+  <p class="date">2026-04-21</p>
 </section>
 <section class="slide level2">
 
@@ -159,11 +159,9 @@ Solon Karapanagiotis
 }
 </style>
 </section>
-<section id="materials" class="slide level2">
-<h2>Materials</h2>
-<p>https://github.com/solonkarapa/Feature-Selection/</p>
-
-<img data-src="slides_files/images/github_qr.png" style="width:100.0%" class="r-stretch"><blockquote>
+<section id="section" class="slide level2">
+<h2></h2>
+<blockquote>
 <p>Copyright © 2026 Solon Karapanagiotis – This presentation and its contents may not be shared, copied, or redistributed without permission.</p>
 </blockquote>
 </section>
@@ -326,7 +324,7 @@ Solon Karapanagiotis
 </blockquote>
 </div>
 </section>
-<section id="section" class="slide level2 center">
+<section id="section-1" class="slide level2 center">
 <h2></h2>
 <blockquote>
 <p>Practical 1</p>
@@ -663,7 +661,7 @@ x5          .         </code></pre>
 <h2>Summary Methods</h2>
 
 <img data-src="slides_files/images/feature_selection_methods.png" class="quarto-figure quarto-figure-center r-stretch"></section>
-<section id="section-1" class="slide level2 center">
+<section id="section-2" class="slide level2 center">
 <h2></h2>
 <blockquote>
 <p>Practical 2</p>
@@ -741,13 +739,12 @@ x5          .         </code></pre>
 <li class="fragment">Fit the best feature subset using the <strong>entire training set</strong>.</li>
 <li class="fragment">Choose the model and feature subset with the best performance.</li>
 <li class="fragment">Fit the final model using the best feature subset on the <strong>entire training set</strong>.</li>
-<li class="fragment">End resample loop.</li>
 </ol>
 <ul>
 <li class="fragment">Basically, the subset size is treated as a tuning parameter.</li>
 </ul>
 </section>
-<section id="section-2" class="slide level2 center">
+<section id="section-3" class="slide level2 center">
 <h2></h2>
 <blockquote>
 <p>Practical 3</p>
@@ -758,7 +755,7 @@ x5          .         </code></pre>
 <ol type="1">
 <li class="fragment">Always start with data curation steps:
 <ul>
-<li class="fragment">eg consider removing constant / near-zero variance features.</li>
+<li class="fragment">e.g.&nbsp;consider removing constant / near-zero variance features.</li>
 </ul></li>
 <li class="fragment">Use filter methods as a baseline, fast screening approach.</li>
 <li class="fragment">As a general feature selection strategy would be to use models that can intrinsically eliminate features from the model while the model is fit (embedded methods).
@@ -766,7 +763,6 @@ x5          .         </code></pre>
 <li class="fragment">These models may yield good results much more quickly than wrapper methods.</li>
 <li class="fragment">Note that it is unrealistic to expect that models using embedded feature selection would select the same feature subset, especially if linear and nonlinear methods are being compared.</li>
 </ul></li>
-<li class="fragment">If a (non-)linear embedded method has good predictive performance, then we could proceed to a wrapper method that is combined with a (non-)linear model.</li>
 <li class="fragment">If multiple approaches select large feature sets then this may imply that reducing the number of features may not be feasible.</li>
 <li class="fragment"><strong>Most important</strong>: Feature selection must happen inside resampling, not before it.</li>
 <li class="fragment"><strong>Stability matters more than importance</strong>: Good feature sets should be consistent across folds and not wildly changing ranking.</li>
@@ -777,10 +773,10 @@ x5          .         </code></pre>
 <h2>Resources</h2>
 <ul>
 <li class="fragment">Hastie, Trevor, Robert Tibshirani, and Jerome Friedman. <a href="https://hastie.su.domains/ElemStatLearn/">The Elements of Statistical Learning, 2017</a></li>
-<li class="fragment">James, Gareth, Daniela Witten, Trevor Hastie, and Robert Tibshirani. <a href="https://www.statlearning.com/">An Introduction to Statistical Learning: with Applications in R</a>, 2013. (and Python)</li>
+<li class="fragment">James, Gareth, Daniela Witten, Trevor Hastie, and Robert Tibshirani. <a href="https://www.statlearning.com/">An Introduction to Statistical Learning: with Applications in R</a>, 2013 (and Python)</li>
 <li class="fragment">Guyon, Isabelle, and André Elisseeff. “An introduction to variable and feature selection.” Journal of Machine Learning Research (2003)</li>
-<li class="fragment">Kuhn, Max, and Kjell Johnson. <a href="https://link.springer.com/book/10.1007/978-1-4614-6849-3">Applied Predictive Modeling</a>, 2013.</li>
-<li class="fragment">Liu, H. (2011). <a href="https://link.springer.com/rwe/10.1007/978-0-387-30164-8_306">Feature Selection</a>. In: Sammut, C., Webb, G.I. (eds) Encyclopedia of Machine Learning.</li>
+<li class="fragment">Kuhn, Max, and Kjell Johnson. <a href="https://link.springer.com/book/10.1007/978-1-4614-6849-3">Applied Predictive Modeling</a>, 2013</li>
+<li class="fragment">Liu, H. (2011). <a href="https://link.springer.com/rwe/10.1007/978-0-387-30164-8_306">Feature Selection</a>. In: Sammut, C., Webb, G.I. Encyclopedia of Machine Learning</li>
 </ul>
 
 </section>
