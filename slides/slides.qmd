@@ -5,13 +5,14 @@ author:
    email: sk921
    affiliations: MRC Biostatistics Unit, University of Cambridge
 date: "04-21-2026"
-format: 
-    revealjs:
-        margin: 0.1
-        width: 1800
-        height: 700 
-        slide-number: true
-        incremental: true
+format: pdf
+#format: 
+#    revealjs:
+#        margin: 0.1
+#        width: 1800
+#        height: 700 
+#        slide-number: true
+#        incremental: true
 editor: visual
 ---
 
